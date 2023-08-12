@@ -5,10 +5,11 @@ import dynamic from 'next/dynamic'
 import UrlParse from 'url-parse'
 import { debounce, intersection, uniq } from 'lodash'
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons'
+import Link from 'next/link'
 const ReactJson = dynamic(() => import('react-json-view'), {
 	ssr: false
 })
-const pathRegex = /:\w+/g
+const pathRegex = /\/:\w+/g
 const varRegex = /({\w+})/g
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
 const METHOD_OPTIONS = METHODS.map((item) => ({ value: item, label: item }))
@@ -24,6 +25,7 @@ const Index = () => {
 	const urlWatch = Form.useWatch('url', form)
 	const generatedUrlWatch = Form.useWatch('generatedUrl', form)
 	const [sendLoading, setSendLoading] = useState(false)
+	const [urlValidation, setUrlValidation] = useState({})
 	const [response, setResponse] = useState(undefined)
 	const handleSend = async (values) => {
 		const { generatedUrl, method } = values
@@ -67,7 +69,7 @@ const Index = () => {
 				const pathArrayToObject = (pathArray || [])
 					.filter((obj) => 'name' in (obj || {}))
 					.reduce((obj, { name, value }) => {
-						obj[`:${name}`] = value
+						obj[`/:${name}`] = '/' + value
 						return obj
 					}, {})
 				const outputString = newUrlString.replace(pathRegex, (match) => pathArrayToObject[match] || match)
@@ -128,7 +130,7 @@ const Index = () => {
 				debounceSetQuery(queryObjectToArray)
 			}
 			if (Array.isArray(pathCaptures)) {
-				const pathVariablesToArray = uniq(pathCaptures).map((rawPath) => ({ name: rawPath.slice(1), value: '' }))
+				const pathVariablesToArray = uniq(pathCaptures).map((rawPath) => ({ name: rawPath.slice(2), value: '' }))
 				debounceSetPathVariables(pathVariablesToArray)
 			} else {
 				debounceSetPathVariables([])
@@ -170,6 +172,25 @@ const Index = () => {
 			debounceSetUrlGenerated(urlWatch, pathWatch || [], varWatch)
 		}
 	}, [varWatch])
+	useEffect(() => {
+		if (!!generatedUrlWatch) {
+			const urlValidation =
+				UrlParse(generatedUrlWatch, true).hostname === 'localhost'
+					? {
+							validateStatus: 'warning',
+							help: (
+								<>
+									{'Looks like you are trying to access localhost, make sure to set CORS "Access-Control-Allow-Origin" to "*" '}
+									<Link href={'https://gist.github.com/adhemukhlis/12b40ae3144d27aad35beeee6f86e160'}>detail</Link>
+								</>
+							)
+					  }
+					: {}
+			setUrlValidation(urlValidation)
+		} else {
+			setUrlValidation({})
+		}
+	}, [generatedUrlWatch])
 	const items = [
 		{
 			key: '1',
@@ -207,7 +228,7 @@ const Index = () => {
 			label: `Path Variables`,
 			forceRender: true,
 			children: (
-				<Form form={pathForm} layout="vertical">
+				<Form form={pathForm} layout="vertical" initialValues={{ path: [{ name: 'username', value: 'adhemukhlis' }] }}>
 					<Form.List name="path">
 						{(fields, { remove }) => (
 							<>
@@ -290,19 +311,21 @@ const Index = () => {
 			)
 		}
 	]
+
 	return (
 		<div style={{ minHeight: '100vh', padding: '2rem' }}>
+			{/* {JSON.stringify(urlValidation)} */}
 			<Form
 				layout={'inline'}
 				form={form}
 				onFinish={handleSend}
 				style={{ maxWidth: 'none' }}
-				initialValues={{ method: 'GET', url: 'https://api.github.com/users/adhemukhlis', generatedUrl: '' }}
+				initialValues={{ method: 'GET', url: 'https://api.github.com/users/:username', generatedUrl: '' }}
 				autoComplete="none">
 				<Form.Item name="method" style={{ width: '6rem' }}>
 					<Select options={METHOD_OPTIONS} style={{ width: '100%' }} />
 				</Form.Item>
-				<Form.Item name="url" style={{ flex: 1 }}>
+				<Form.Item name="url" style={{ flex: 1 }} hasFeedback {...urlValidation}>
 					<Input />
 				</Form.Item>
 				<Form.Item name="generatedUrl" hidden />
@@ -316,6 +339,7 @@ const Index = () => {
 			<Input addonBefore="preview" value={generatedUrlWatch} readOnly />
 			<Divider />
 			<Tabs defaultActiveKey="1" items={items} />
+			<Divider />
 			<ReactJson name="response" src={response} />
 		</div>
 	)
