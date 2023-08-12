@@ -3,7 +3,7 @@ import axios from 'axios'
 import { useEffect, useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import UrlParse from 'url-parse'
-import { debounce, intersection, intersectionWith, isEqual, uniq } from 'lodash'
+import { debounce, intersection, uniq } from 'lodash'
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons'
 const ReactJson = dynamic(() => import('react-json-view'), {
 	ssr: false
@@ -26,7 +26,7 @@ const Index = () => {
 	const [sendLoading, setSendLoading] = useState(false)
 	const [response, setResponse] = useState(undefined)
 	const handleSend = async (values) => {
-		const { generatedUrl, url, method } = values
+		const { generatedUrl, method } = values
 		const body = getBody()
 		const parsedUrl = UrlParse(values.generatedUrl)
 		const isLocalhost = parsedUrl.hostname === 'localhost'
@@ -105,18 +105,18 @@ const Index = () => {
 		}, 1000),
 		[]
 	)
-	const debounceSetVariables = useCallback(
-		debounce(async (value) => {
-			const prev = varForm.getFieldValue('var') || []
-			const prevValue = prev.map(({ name }) => name)
-			const currentValue = (value || []).map(({ name }) => name)
-			const intersectionValue = intersection(prevValue, currentValue)
-			const keepValue = prev.filter(({ name }) => intersectionValue.includes(name))
-			const newValue = value.filter(({ name }) => !intersectionValue.includes(name))
-			varForm.setFieldValue('var', [...keepValue, ...newValue])
-		}, 1000),
-		[]
-	)
+	// const debounceSetVariables = useCallback(
+	// 	debounce(async (value) => {
+	// 		const prev = varForm.getFieldValue('var') || []
+	// 		const prevValue = prev.map(({ name }) => name)
+	// 		const currentValue = (value || []).map(({ name }) => name)
+	// 		const intersectionValue = intersection(prevValue, currentValue)
+	// 		const keepValue = prev.filter(({ name }) => intersectionValue.includes(name))
+	// 		const newValue = value.filter(({ name }) => !intersectionValue.includes(name))
+	// 		varForm.setFieldValue('var', [...keepValue, ...newValue])
+	// 	}, 1000),
+	// 	[]
+	// )
 	useEffect(() => {
 		if (!!urlWatch) {
 			const currentUrl = UrlParse(urlWatch, true)

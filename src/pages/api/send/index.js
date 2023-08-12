@@ -1,5 +1,5 @@
-import { withSessionRoute } from '@/utils/session-wrapper'
 import axios from 'axios'
+import { withSessionRoute } from '@/utils/session-wrapper'
 
 export default withSessionRoute(async (req, res) => {
 	const { method, url, body } = req.body
