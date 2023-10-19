@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
-import { getIronSession } from 'iron-session/edge'
-import sessionOptions from '@/utils/sessionOptions'
+// import { getIronSession } from 'iron-session/edge'
+// import sessionOptions from '@/utils/sessionOptions'
 const isAuthenticated = () => true
 // This function can be marked `async` if using `await` inside
 const middleware = async (request) => {
 	const nextRes = NextResponse.next()
-	const session = await getIronSession(request, nextRes, sessionOptions)
+	// const session = await getIronSession(request, nextRes, sessionOptions)
 
 	// Call our authentication function to check the request
 	if (!isAuthenticated(request)) {
