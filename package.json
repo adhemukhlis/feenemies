@@ -42,7 +42,7 @@
     "eslint-plugin-unused-imports": "^3.0.0",
     "prettier": "^3.0.0",
     "yarn-upgrade-all": "^0.7.2",
-    "@netlify/plugin-nextjs": "4.32.2"
+    "@netlify/plugin-nextjs": "4.36.1"
   },
   "yarn-upgrade-all": {
     "ignore": [
