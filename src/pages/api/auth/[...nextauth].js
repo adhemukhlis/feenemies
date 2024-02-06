@@ -1,6 +1,7 @@
 // pages/api/auth.js
 import NextAuth from 'next-auth'
 import GithubProvider from 'next-auth/providers/github'
+import GoogleProvider from 'next-auth/providers/google'
 
 export default NextAuth({
 	providers: [
@@ -9,8 +10,20 @@ export default NextAuth({
 			clientSecret: String(process.env.GITHUB_CLIENT_SECRET)
 			// scope: 'gist, user'
 			// callbackUrl: 'http://localhost:3000/api/auth/callback/github'
+		}),
+		GoogleProvider({
+			clientId: process.env.GOOGLE_CLIENT_ID,
+			clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+			authorization: {
+				params: {
+					scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/drive.file'
+				}
+			}
 		})
 	],
+	session: {
+		strategy: 'jwt'
+	},
 	callbacks: {
 		// async redirect(params) {
 		// 	const { url } = params
@@ -25,31 +38,23 @@ export default NextAuth({
 		// 	return new URL(callbackUrl).pathname
 		// },
 		async signIn({ account, user, ...other }) {
-			// console.log('signin_account', account)
-			// console.log('signin_user', user)
-			// console.log('signin_other', other)
-
+			user.provider = account.provider
 			if (account.provider === 'github') {
+				user.accessToken = account.access_token
+				return true
+			} else if (account.provider === 'google') {
 				user.accessToken = account.access_token
 				return true
 			}
 			return false
 		},
 		async jwt({ token, account, ...other }) {
-			// console.log('jwt_token', token)
-			// console.log('jwt_account', account)
-			// console.log('jwt_other', other)
 			if (account) {
 				token.accessToken = account.access_token
 			}
 			return token
 		},
 		async session({ session, token, ...other }) {
-			// Send properties to the client, like an access_token from a provider.
-			// console.log('session_session', session)
-			// console.log('session_token', token)
-			// console.log('session_other', other)
-
 			session.accessToken = token.accessToken
 			return session
 		}
