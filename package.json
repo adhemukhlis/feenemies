@@ -6,7 +6,7 @@
     "dev:windows": "npx env-cmd -x next dev -p $PORT",
     "dev": "npx env-cmd -x next dev -p '$PORT'",
     "build": "next build",
-    "start": "npx env-cmd -x next start -p '$PORT'",
+    "start": "next start",
     "lint": "next lint",
     "prettier-all": "npx prettier --config .prettierrc --write ./src",
     "fix": "npx eslint --fix ./src --ext .js --ext .jsx",
