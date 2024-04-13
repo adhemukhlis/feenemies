@@ -1,7 +1,6 @@
-import { Button, Divider, Form, Input, Select, Space, Tabs, Typography } from 'antd'
+import { Button, Divider, Form, Input, Select, Space, Tabs, Typography, Tree } from 'antd'
 import axios from 'axios'
 import { useEffect, useState, useCallback } from 'react'
-import dynamic from 'next/dynamic'
 import UrlParse from 'url-parse'
 import { debounce, has, intersection, uniq } from 'lodash'
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons'
@@ -10,9 +9,6 @@ import { getSession, useSession } from 'next-auth/react'
 import lz from 'lz-string'
 import { useRouter } from 'next/router'
 import routeGuard from '@/utils/route-guard'
-const ReactJson = dynamic(() => import('react-json-view'), {
-	ssr: false
-})
 const pathRegex = /\/:\w+/g
 const varRegex = /({\w+})/g
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
@@ -34,6 +30,55 @@ const Index = ({ data }) => {
 	const [sendLoading, setSendLoading] = useState(false)
 	const [urlValidation, setUrlValidation] = useState({})
 	const [response, setResponse] = useState(undefined)
+	function transformObject(inputObject) {
+
+
+		const transformed = []
+
+		// Recursive function to transform nodes
+		function transformNode(node, keyPrefix, isArray = false) {
+
+			const children = []
+			const keyPrefixWithDot = keyPrefix ? `${keyPrefix}-` : ''
+			;(isArray ? node : Object.keys(node)).forEach((key, index) => {
+				const childNode = node[isArray ? index : key]
+
+				// Add title and key
+				const transformedNode = {
+					title: isArray ? index : key,
+					key: `${keyPrefixWithDot}${index}`
+				}
+
+				// Check if childNode has children
+				if (Array.isArray(childNode)) {
+					transformedNode.children =
+						childNode !== null
+							? transformNode(childNode, transformedNode.key, true)
+							: [{ title: `${childNode}`, key: `${keyPrefixWithDot}${index}-0` }]
+				} else if (typeof childNode === 'object') {
+					transformedNode.children =
+						childNode !== null
+							? transformNode(childNode, transformedNode.key)
+							: [{ title: `${childNode}`, key: `${keyPrefixWithDot}${index}-0` }]
+				} else {
+					transformedNode.children = [{ title: `${childNode}`, key: `${keyPrefixWithDot}${index}-0` }]
+				}
+
+				children.push(transformedNode)
+			})
+
+			return children
+		}
+
+		// Start the transformation with the root input object
+		transformed.push({
+			title: 'response',
+			key: '0',
+			children: !!inputObject ? transformNode(inputObject, '0') : []
+		})
+
+		return transformed
+	}
 	const handleSend = async (values) => {
 		const { generatedUrl, method } = values
 		const body = getBody()
@@ -348,7 +393,13 @@ const Index = ({ data }) => {
 			<Divider />
 			<Tabs defaultActiveKey="1" items={items} />
 			<Divider />
-			<ReactJson name="response" src={response} />
+			<Tree
+				showLine
+				// switcherIcon={<DownOutlined />}
+				defaultExpandAll
+				// onSelect={onSelect}
+				treeData={transformObject(response)}
+			/>
 		</div>
 	)
 }
