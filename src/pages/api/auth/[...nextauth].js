@@ -14,8 +14,8 @@ export const authOptions = {
 					scope: 'user gist'
 				}
 			},
-			callbackUrl: process.env.NEXTAUTH_URL
-			// callbackUrl: 'http://localhost:3000/api/auth/callback/github'
+			// callbackUrl: process.env.NEXTAUTH_URL
+			callbackUrl: 'http://localhost:3000/api/auth/callback/github'
 			// callbackUrl: 'https://feenemies.vercel.app/api/auth/callback/github'
 		})
 		// GoogleProvider({
