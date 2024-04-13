@@ -1,25 +1,31 @@
 // pages/api/auth.js
 import NextAuth from 'next-auth'
 import GithubProvider from 'next-auth/providers/github'
-import GoogleProvider from 'next-auth/providers/google'
+// import GoogleProvider from 'next-auth/providers/google'
 
-export default NextAuth({
+export const authOptions = {
+	secret: process.env.SESSION_KEY,
 	providers: [
 		GithubProvider({
 			clientId: String(process.env.GITHUB_CLIENT_ID),
-			clientSecret: String(process.env.GITHUB_CLIENT_SECRET)
-			// scope: 'gist, user'
-			// callbackUrl: 'http://localhost:3000/api/auth/callback/github'
-		}),
-		GoogleProvider({
-			clientId: process.env.GOOGLE_CLIENT_ID,
-			clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+			clientSecret: String(process.env.GITHUB_CLIENT_SECRET),
 			authorization: {
 				params: {
-					scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/drive.file'
+					scope: 'user gist'
 				}
 			}
-		})
+			// callbackUrl: 'http://localhost:3000/api/auth/callback/github'
+		}),
+		// GoogleProvider({
+		// 	clientId: process.env.GOOGLE_CLIENT_ID,
+		// 	clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+		// 	authorization: {
+		// 		params: {
+		// 			scope:
+		// 				'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/drive.file'
+		// 		}
+		// 	}
+		// })
 	],
 	session: {
 		strategy: 'jwt'
@@ -48,15 +54,23 @@ export default NextAuth({
 			}
 			return false
 		},
-		async jwt({ token, account, ...other }) {
+		async jwt({ token, account, user, ...other }) {
 			if (account) {
 				token.accessToken = account.access_token
+			}
+			if (!!user?.provider) {
+				token.provider = user?.provider
 			}
 			return token
 		},
 		async session({ session, token, ...other }) {
 			session.accessToken = token.accessToken
+			if (!!token?.provider) {
+				session.provider = token?.provider
+			}
 			return session
 		}
 	}
-})
+}
+
+export default NextAuth(authOptions)

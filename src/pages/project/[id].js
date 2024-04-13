@@ -1,4 +1,4 @@
-import { Button, Divider, Form, Input, Select, Space, Tabs } from 'antd'
+import { Button, Divider, Form, Input, Select, Space, Tabs, Typography } from 'antd'
 import axios from 'axios'
 import { useEffect, useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
@@ -6,7 +6,10 @@ import UrlParse from 'url-parse'
 import { debounce, has, intersection, uniq } from 'lodash'
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons'
 import Link from 'next/link'
-import { useSession } from 'next-auth/react'
+import { getSession, useSession } from 'next-auth/react'
+import lz from 'lz-string'
+import { useRouter } from 'next/router'
+import routeGuard from '@/utils/route-guard'
 const ReactJson = dynamic(() => import('react-json-view'), {
 	ssr: false
 })
@@ -14,8 +17,10 @@ const pathRegex = /\/:\w+/g
 const varRegex = /({\w+})/g
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
 const METHOD_OPTIONS = METHODS.map((item) => ({ value: item, label: item }))
-const Index = () => {
+const { Text } = Typography
+const Index = ({ data }) => {
 	const { data: session } = useSession()
+	const router = useRouter()
 	const [form] = Form.useForm()
 	const [bodyForm] = Form.useForm()
 	const [queryForm] = Form.useForm()
@@ -121,36 +126,7 @@ const Index = () => {
 	// 	}, 1000),
 	// 	[]
 	// )
-	useEffect(() => {
-		if (has(session, 'accessToken')) {
-			axios
-				.request({
-					method: 'GET',
-					url: 'https://api.github.com/gists',
-					headers: {
-						Authorization: `Bearer ${session?.accessToken}`,
-						Accept: 'application/vnd.github+json'
-					}
-				})
-				.then((res) => {
-					console.log(
-						res.data
-						// .filter((item) => item.description === '__FEENEMIES_PROJECT_DATA__')
-					)
-					// axios
-					// 	.request({
-					// 		method: 'GET',
-					// 		url: 'https://api.github.com/gists/' + res.data[0].id,
-					// 		headers: {
-					// 			Authorization: `Bearer ${session?.accessToken}`
-					// 		}
-					// 	})
-					// 	.then((res) => {
-					// 		console.log(res.data)
-					// 	})
-				})
-		}
-	}, [session])
+
 	useEffect(() => {
 		if (!!urlWatch) {
 			const currentUrl = UrlParse(urlWatch, true)
@@ -260,7 +236,7 @@ const Index = () => {
 			label: `Path Variables`,
 			forceRender: true,
 			children: (
-				<Form form={pathForm} layout="vertical" initialValues={{ path: [{ name: 'username', value: 'adhemukhlis' }] }}>
+				<Form form={pathForm} layout="vertical" initialValues={{ path: [{ name: 'id', value: router.query.id }] }}>
 					<Form.List name="path">
 						{(fields, { remove }) => (
 							<>
@@ -346,12 +322,13 @@ const Index = () => {
 
 	return (
 		<div style={{ minHeight: '100vh', padding: '2rem' }}>
+			<Text strong>{data.project_name}</Text>
 			<Form
 				layout={'inline'}
 				form={form}
 				onFinish={handleSend}
 				style={{ maxWidth: 'none' }}
-				initialValues={{ method: 'GET', url: 'https://api.github.com/users/:username', generatedUrl: '' }}
+				initialValues={{ method: 'GET', url: 'https://api.github.com/gists/:id', generatedUrl: '' }}
 				autoComplete="none">
 				<Form.Item name="method" style={{ width: '6rem' }}>
 					<Select options={METHOD_OPTIONS} style={{ width: '100%' }} />
@@ -376,3 +353,28 @@ const Index = () => {
 	)
 }
 export default Index
+export const getServerSideProps = async (context) => {
+	const session = await getSession(context)
+	const accessToken = session?.accessToken
+	const isLoggedIn = !!accessToken
+	let data = {}
+	if (has(session, 'accessToken') && session?.provider === 'github') {
+		const res = await axios.request({
+			method: 'GET',
+			url: 'https://api.github.com/gists/' + context.params.id,
+			headers: {
+				Authorization: `Bearer ${session?.accessToken}`,
+				Accept: 'application/vnd.github+json'
+			}
+		})
+		const compressed_content = res.data.files['project-info'].content
+		const decompressed_content = lz.decompress(compressed_content)
+		data = JSON.parse(decompressed_content)
+	}
+
+	return routeGuard([isLoggedIn], '/', {
+		props: {
+			data
+		}
+	})
+}

@@ -7,9 +7,7 @@ const SignInPage = () => {
 				<button onClick={() => signIn('github', { scope: 'user:email gist read:gist write:gist' })}>
 					Login with GitHub
 				</button>
-				<button onClick={() => signIn('google')}>
-					Login with Google
-				</button>
+				{/* <button onClick={() => signIn('google')}>Login with Google</button> */}
 			</div>
 		</div>
 	)

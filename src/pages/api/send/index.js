@@ -10,7 +10,6 @@ export default withSessionRoute(async (req, res) => {
 				url,
 				data: body
 			})
-			console.log('res', Object.keys(response.request))
 			const { data, status, config, headers, ...other } = response
 			res.status(200).send({ data, status, config, headers })
 		} catch (error) {
