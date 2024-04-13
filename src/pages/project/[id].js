@@ -5,7 +5,7 @@ import UrlParse from 'url-parse'
 import { debounce, has, intersection, uniq } from 'lodash'
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons'
 import Link from 'next/link'
-import { getSession, useSession } from 'next-auth/react'
+import { getSession } from 'next-auth/react'
 import lz from 'lz-string'
 import { useRouter } from 'next/router'
 import routeGuard from '@/utils/route-guard'
@@ -15,7 +15,7 @@ const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
 const METHOD_OPTIONS = METHODS.map((item) => ({ value: item, label: item }))
 const { Text } = Typography
 const Index = ({ data }) => {
-	const { data: session } = useSession()
+	// const { data: session } = useSession()
 	const router = useRouter()
 	const [form] = Form.useForm()
 	const [bodyForm] = Form.useForm()
@@ -31,37 +31,45 @@ const Index = ({ data }) => {
 	const [urlValidation, setUrlValidation] = useState({})
 	const [response, setResponse] = useState(undefined)
 	function transformObject(inputObject) {
-
-
 		const transformed = []
 
 		// Recursive function to transform nodes
 		function transformNode(node, keyPrefix, isArray = false) {
-
 			const children = []
+
 			const keyPrefixWithDot = keyPrefix ? `${keyPrefix}-` : ''
+
 			;(isArray ? node : Object.keys(node)).forEach((key, index) => {
 				const childNode = node[isArray ? index : key]
 
 				// Add title and key
 				const transformedNode = {
-					title: isArray ? index : key,
+					title: isArray ? index : `"${key}"`,
 					key: `${keyPrefixWithDot}${index}`
 				}
 
 				// Check if childNode has children
 				if (Array.isArray(childNode)) {
-					transformedNode.children =
-						childNode !== null
-							? transformNode(childNode, transformedNode.key, true)
-							: [{ title: `${childNode}`, key: `${keyPrefixWithDot}${index}-0` }]
-				} else if (typeof childNode === 'object') {
-					transformedNode.children =
-						childNode !== null
-							? transformNode(childNode, transformedNode.key)
-							: [{ title: `${childNode}`, key: `${keyPrefixWithDot}${index}-0` }]
+					transformedNode.children = transformNode(childNode, transformedNode.key, true)
+				} else if (typeof childNode === 'object' && childNode !== null) {
+					transformedNode.children = transformNode(childNode, transformedNode.key)
 				} else {
-					transformedNode.children = [{ title: `${childNode}`, key: `${keyPrefixWithDot}${index}-0` }]
+					transformedNode.title = (
+						<>
+							{`${transformedNode.title} : `}
+							{typeof childNode === 'string' ? (
+								<Text style={{ color: 'seagreen' }}>{`"${childNode}"`}</Text>
+							) : typeof childNode === 'boolean' ? (
+								<Text code style={{ color: childNode ? 'blue' : 'tomato' }}>{`${childNode}`}</Text>
+							) : childNode === null ? (
+								<Text code style={{ color: 'gray' }}>{`${childNode}`}</Text>
+							) : typeof childNode === 'number' ? (
+								<Text strong style={{ color: 'orangered' }} >{`${childNode}`}</Text>
+							) : (
+								''
+							)}
+						</>
+					)
 				}
 
 				children.push(transformedNode)
@@ -72,7 +80,7 @@ const Index = ({ data }) => {
 
 		// Start the transformation with the root input object
 		transformed.push({
-			title: 'response',
+			title: <Text style={{ color: 'darkgray' }}>response</Text>,
 			key: '0',
 			children: !!inputObject ? transformNode(inputObject, '0') : []
 		})
