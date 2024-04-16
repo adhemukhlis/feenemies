@@ -1,6 +1,6 @@
-import Document, { Head, Html, Main, NextScript } from 'next/document'
 import { StyleProvider, createCache, extractStyle } from '@ant-design/cssinjs'
 import getConfig from 'next/config'
+import Document, { Head, Html, Main, NextScript } from 'next/document'
 const { publicRuntimeConfig } = getConfig()
 export default class MyDocument extends Document {
 	static async getInitialProps(ctx) {
@@ -21,7 +21,6 @@ export default class MyDocument extends Document {
 			styles: (
 				<>
 					{initialProps.styles}
-					{/* This is hack, `extractStyle` does not currently support returning JSX or related data. */}
 					<script
 						dangerouslySetInnerHTML={{
 							__html: `</script>${extractStyle(cache)}<script>`

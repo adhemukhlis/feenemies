@@ -14,10 +14,7 @@ export const authOptions = {
 					scope: 'user gist'
 				}
 			},
-			// callbackUrl: process.env.NEXTAUTH_URL
-			// callbackUrl: 'http://localhost:3000/api/auth/callback/github',
-			callbackUrl: 'https://feenemies.netlify.app/api/auth/callback/github',
-			// callbackUrl: 'https://feenemies.vercel.app/api/auth/callback/github'
+			callbackUrl: process.env.GITHUB_NEXTAUTH_URL
 		})
 		// GoogleProvider({
 		// 	clientId: process.env.GOOGLE_CLIENT_ID,
@@ -46,10 +43,14 @@ export const authOptions = {
 
 		// 	return new URL(callbackUrl).pathname
 		// },
-		async signIn({ account, user, ...other }) {
+		async signIn({ account, user, profile, ...other }) {
+			// console.log({ account, user, profile, ...other })
 			user.provider = account.provider
 			if (account.provider === 'github') {
 				user.accessToken = account.access_token
+				user.username = profile.login
+				user.userId = profile.id
+
 				return true
 			} else if (account.provider === 'google') {
 				user.accessToken = account.access_token
@@ -63,6 +64,10 @@ export const authOptions = {
 			}
 			if (!!user?.provider) {
 				token.provider = user?.provider
+				if (user?.provider === 'github') {
+					const { username, userId } = user
+					token.payload = { username, userId }
+				}
 			}
 			return token
 		},
@@ -70,6 +75,10 @@ export const authOptions = {
 			session.accessToken = token.accessToken
 			if (!!token?.provider) {
 				session.provider = token?.provider
+				if (token?.provider === 'github') {
+					session.user.username = token.payload.username
+					session.user.userId = token.payload.userId
+				}
 			}
 			return session
 		}

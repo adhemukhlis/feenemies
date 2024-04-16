@@ -14,7 +14,7 @@ const varRegex = /({\w+})/g
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
 const METHOD_OPTIONS = METHODS.map((item) => ({ value: item, label: item }))
 const { Text } = Typography
-const Index = ({ data }) => {
+const ProjectPage = ({ data }) => {
 	// const { data: session } = useSession()
 	const router = useRouter()
 	const [form] = Form.useForm()
@@ -64,7 +64,7 @@ const Index = ({ data }) => {
 							) : childNode === null ? (
 								<Text code style={{ color: 'gray' }}>{`${childNode}`}</Text>
 							) : typeof childNode === 'number' ? (
-								<Text strong style={{ color: 'orangered' }} >{`${childNode}`}</Text>
+								<Text strong style={{ color: 'orangered' }}>{`${childNode}`}</Text>
 							) : (
 								''
 							)}
@@ -289,7 +289,7 @@ const Index = ({ data }) => {
 			label: `Path Variables`,
 			forceRender: true,
 			children: (
-				<Form form={pathForm} layout="vertical" initialValues={{ path: [{ name: 'id', value: router.query.id }] }}>
+				<Form form={pathForm} layout="vertical" initialValues={{ path: [{ name: 'id', value: router.query.project_id }] }}>
 					<Form.List name="path">
 						{(fields, { remove }) => (
 							<>
@@ -411,7 +411,7 @@ const Index = ({ data }) => {
 		</div>
 	)
 }
-export default Index
+export default ProjectPage
 export const getServerSideProps = async (context) => {
 	const session = await getSession(context)
 	const accessToken = session?.accessToken
@@ -420,7 +420,7 @@ export const getServerSideProps = async (context) => {
 	if (has(session, 'accessToken') && session?.provider === 'github') {
 		const res = await axios.request({
 			method: 'GET',
-			url: 'https://api.github.com/gists/' + context.params.id,
+			url: 'https://api.github.com/gists/' + context.params.project_id,
 			headers: {
 				Authorization: `Bearer ${session?.accessToken}`,
 				Accept: 'application/vnd.github+json'
